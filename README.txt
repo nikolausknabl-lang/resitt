@@ -1,0 +1,1 @@
+Supabase-Version für Vercel.
