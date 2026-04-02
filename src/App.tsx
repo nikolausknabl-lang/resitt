@@ -1,4 +1,24 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  "https://aoifhrkzdgnhnnbtjxri.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvaWZocmt6ZGduaG5uYnRqeHJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNzU3OTMsImV4cCI6MjA5MDY1MTc5M30.6U2kHdN_s88M6fmVqceNMpB0A30Wc0tM00vH6MqDC2w"
+);
+
+type DbMatch = {
+  id: string;
+  match_no: number;
+  bracket: string;
+  source_top: string | null;
+  source_bottom: string | null;
+  player_top_name: string | null;
+  player_bottom_name: string | null;
+  sets_top: number | null;
+  sets_bottom: number | null;
+  x_pos: number | string;
+  y_pos: number | string;
+};
 
 type Template = {
   box: { x: number; y: number };
@@ -10,8 +30,11 @@ type Template = {
 
 type MatchData = {
   id: string;
+  matchNo: number;
   p1: string;
   p2: string;
+  s1: number;
+  s2: number;
   originX: number;
   originY: number;
 };
@@ -51,109 +74,18 @@ const players = [
   "Julian", "Georg", "Robin", "Richard", "Philipp", "Kevin", "Ben", "Felix",
 ];
 
-const winnersR1: MatchData[] = [
-  { id: "1", p1: "Simon", p2: "Paul", originX: 905, originY: 110 },
-  { id: "2", p1: "Andreas", p2: "Anton", originX: 905, originY: 168 },
-  { id: "3", p1: "Jakob", p2: "Malte", originX: 905, originY: 226 },
-  { id: "4", p1: "Noah", p2: "Dennis", originX: 905, originY: 284 },
-  { id: "5", p1: "Tim", p2: "Bastian", originX: 905, originY: 342 },
-  { id: "6", p1: "Michael", p2: "Vincent", originX: 905, originY: 400 },
-  { id: "7", p1: "Finn", p2: "Marvin", originX: 905, originY: 458 },
-  { id: "8", p1: "Daniel", p2: "Lukas", originX: 905, originY: 516 },
-  { id: "9", p1: "Marcel", p2: "Konrad", originX: 905, originY: 574 },
-  { id: "10", p1: "David", p2: "Alexander", originX: 905, originY: 632 },
-  { id: "11", p1: "Matteo", p2: "Adrian", originX: 905, originY: 690 },
-  { id: "12", p1: "Lorenz", p2: "Kilian", originX: 905, originY: 748 },
-  { id: "13", p1: "Julian", p2: "Georg", originX: 905, originY: 806 },
-  { id: "14", p1: "Robin", p2: "Richard", originX: 905, originY: 864 },
-  { id: "15", p1: "Philipp", p2: "Kevin", originX: 905, originY: 922 },
-  { id: "16", p1: "Ben", p2: "Felix", originX: 905, originY: 980 },
-];
-
-const winnersR2: MatchData[] = [
-  { id: "17", p1: "W1", p2: "W2", originX: 1000, originY: 139 },
-  { id: "18", p1: "W3", p2: "W4", originX: 1000, originY: 255 },
-  { id: "19", p1: "W5", p2: "W6", originX: 1000, originY: 371 },
-  { id: "20", p1: "W7", p2: "W8", originX: 1000, originY: 487 },
-  { id: "21", p1: "W9", p2: "W10", originX: 1000, originY: 603 },
-  { id: "22", p1: "W11", p2: "W12", originX: 1000, originY: 719 },
-  { id: "23", p1: "W13", p2: "W14", originX: 1000, originY: 835 },
-  { id: "24", p1: "W15", p2: "W16", originX: 1000, originY: 951 },
-];
-
-const winnersR3: MatchData[] = [
-  { id: "33", p1: "W17", p2: "W18", originX: 1095, originY: 197 },
-  { id: "34", p1: "W19", p2: "W20", originX: 1095, originY: 429 },
-  { id: "35", p1: "W21", p2: "W22", originX: 1095, originY: 661 },
-  { id: "36", p1: "W23", p2: "W24", originX: 1095, originY: 893 },
-];
-
-const winnersR4: MatchData[] = [
-  { id: "49", p1: "W33", p2: "W34", originX: 1180, originY: 313 },
-  { id: "50", p1: "W35", p2: "W36", originX: 1180, originY: 777 },
-];
-
-const winnersR5: MatchData[] = [
-  { id: "57", p1: "W49", p2: "W50", originX: 1265, originY: 545 },
-];
-
-const losersR1: MatchData[] = [
-  { id: "25", p1: "L1", p2: "L2", originX: 655, originY: 139 },
-  { id: "26", p1: "L3", p2: "L4", originX: 655, originY: 255 },
-  { id: "27", p1: "L5", p2: "L6", originX: 655, originY: 371 },
-  { id: "28", p1: "L7", p2: "L8", originX: 655, originY: 487 },
-  { id: "29", p1: "L9", p2: "L10", originX: 655, originY: 603 },
-  { id: "30", p1: "L11", p2: "L12", originX: 655, originY: 719 },
-  { id: "31", p1: "L13", p2: "L14", originX: 655, originY: 835 },
-  { id: "32", p1: "L15", p2: "L16", originX: 655, originY: 951 },
-];
-
-const losersR2: MatchData[] = [
-  { id: "37", p1: "W25", p2: "L18", originX: 565, originY: 139 },
-  { id: "38", p1: "W26", p2: "L17", originX: 565, originY: 255 },
-  { id: "39", p1: "W27", p2: "L20", originX: 565, originY: 371 },
-  { id: "40", p1: "W28", p2: "L19", originX: 565, originY: 487 },
-  { id: "41", p1: "W29", p2: "L22", originX: 565, originY: 603 },
-  { id: "42", p1: "W30", p2: "L21", originX: 565, originY: 719 },
-  { id: "43", p1: "W31", p2: "L24", originX: 565, originY: 835 },
-  { id: "44", p1: "W32", p2: "L23", originX: 565, originY: 951 },
-];
-
-const losersR3: MatchData[] = [
-  { id: "45", p1: "W37", p2: "W38", originX: 475, originY: 197 },
-  { id: "46", p1: "W39", p2: "W40", originX: 475, originY: 429 },
-  { id: "47", p1: "W41", p2: "W42", originX: 475, originY: 661 },
-  { id: "48", p1: "W43", p2: "W44", originX: 475, originY: 893 },
-];
-
-const losersR4: MatchData[] = [
-  { id: "51", p1: "W45", p2: "L49", originX: 388, originY: 197 },
-  { id: "52", p1: "W46", p2: "L50", originX: 388, originY: 429 },
-  { id: "53", p1: "W47", p2: "L49", originX: 388, originY: 661 },
-  { id: "54", p1: "W48", p2: "L50", originX: 388, originY: 893 },
-];
-
-const losersR5: MatchData[] = [
-  { id: "55", p1: "W51", p2: "W52", originX: 301, originY: 313 },
-  { id: "56", p1: "W53", p2: "W54", originX: 301, originY: 777 },
-];
-
-const losersR6: MatchData[] = [
-  { id: "58", p1: "W55", p2: "L57", originX: 214, originY: 313 },
-  { id: "59", p1: "W56", p2: "L57", originX: 214, originY: 777 },
-];
-
-const losersR7: MatchData[] = [
-  { id: "60", p1: "W58", p2: "W59", originX: 127, originY: 545 },
-];
-
-const losersR8: MatchData[] = [
-  { id: "61", p1: "W60", p2: "L57", originX: 40, originY: 545 },
-];
-
-const finale: MatchData[] = [
-  { id: "62", p1: "W57", p2: "W61", originX: 1375, originY: 545 },
-];
+function normalizeMatch(row: DbMatch): MatchData {
+  return {
+    id: String(row.match_no),
+    matchNo: row.match_no,
+    p1: row.player_top_name || row.source_top || "",
+    p2: row.player_bottom_name || row.source_bottom || "",
+    s1: Number(row.sets_top ?? 0),
+    s2: Number(row.sets_bottom ?? 0),
+    originX: Number(row.x_pos),
+    originY: Number(row.y_pos),
+  };
+}
 
 function withOffsets(template: Template, commonOffset: number, topNameOffset: number, bottomNameOffset: number): Template {
   return {
@@ -165,9 +97,7 @@ function withOffsets(template: Template, commonOffset: number, topNameOffset: nu
   };
 }
 
-function yMid(match: MatchData) {
-  return match.originY + boxH / 2;
-}
+function yMid(match: MatchData) { return match.originY + boxH / 2; }
 function xRight(match: MatchData) { return match.originX + boxW; }
 function xLeft(match: MatchData) { return match.originX; }
 function targetOriginRight(match: MatchData) { return match.originX + boxW; }
@@ -179,6 +109,7 @@ function groupConnectors(from: MatchData[], to: MatchData[], direction: "right" 
     const a = from[i * 2];
     const b = from[i * 2 + 1];
     const target = to[i];
+    if (!a || !b || !target) continue;
     const ay = yMid(a);
     const by = yMid(b);
     const ty = yMid(target);
@@ -218,31 +149,6 @@ function customConnector(from: MatchData, to: MatchData, direction: "right" | "l
   ];
 }
 
-function ConnectorLayer() {
-  return (
-    <svg style={{ position: "absolute", inset: 0, pointerEvents: "none" }} viewBox={`0 0 ${boardW - 40} ${boardH}`}>
-      <g stroke={palette.line} strokeWidth="1" fill="none" strokeLinecap="square">
-        {groupConnectors(winnersR1, winnersR2, "right")}
-        {groupConnectors(winnersR2, winnersR3, "right")}
-        {groupConnectors(winnersR3, winnersR4, "right")}
-        {groupConnectors(winnersR4, winnersR5, "right")}
-        {groupConnectors(losersR1, losersR2, "left", false)}
-        {groupConnectors(losersR2, losersR3, "left")}
-        {groupConnectors(losersR3, losersR4, "left", false)}
-        {groupConnectors(losersR4, losersR5, "left")}
-        {groupConnectors(losersR5, losersR6, "left", false)}
-        {groupConnectors(losersR6, losersR7, "left")}
-        {customConnector(losersR7[0], losersR8[0], "left", "l7-l8")}
-        {customConnector(winnersR5[0], finale[0], "right", "r5-finale")}
-        <line x1={losersR8[0].originX} y1={yMid(losersR8[0])} x2={losersR8[0].originX - 18} y2={yMid(losersR8[0])} />
-        <line x1={losersR8[0].originX - 18} y1={yMid(losersR8[0])} x2={losersR8[0].originX - 18} y2={boardH - 440} />
-        <line x1={losersR8[0].originX - 18} y1={boardH - 440} x2={finale[0].originX + 15} y2={boardH - 440} />
-        <line x1={finale[0].originX + 15} y1={boardH - 440} x2={finale[0].originX + 15} y2={yMid(finale[0])} />
-      </g>
-    </svg>
-  );
-}
-
 const abs = (left: number, top: number, extra: React.CSSProperties = {}): React.CSSProperties => ({
   position: "absolute",
   left,
@@ -267,8 +173,8 @@ function MatchBox({ match, template }: { match: MatchData; template: Template })
       <div style={abs(match.originX, name2Top, { width: boxW, color: palette.text, fontSize: nameFontSize, textAlign: "center", lineHeight: 1 })}>{match.p2}</div>
       <div style={abs(scoreColumnX, match.originY, { width: 1, height: boxH, background: palette.border })} />
       <div style={abs(scoreColumnX, scoreMidY, { width: scoreWidth, height: 1, background: palette.border })} />
-      <div style={abs(scoreColumnX, score1Top, { width: scoreWidth, height: 10, color: palette.text, fontSize: 11, fontWeight: 600, lineHeight: "10px", textAlign: "center" })}>2</div>
-      <div style={abs(scoreColumnX, score2Top, { width: scoreWidth, height: 10, color: palette.text, fontSize: 11, fontWeight: 600, lineHeight: "10px", textAlign: "center" })}>1</div>
+      <div style={abs(scoreColumnX, score1Top, { width: scoreWidth, height: 10, color: palette.text, fontSize: 11, fontWeight: 600, lineHeight: "10px", textAlign: "center" })}>{match.s1}</div>
+      <div style={abs(scoreColumnX, score2Top, { width: scoreWidth, height: 10, color: palette.text, fontSize: 11, fontWeight: 600, lineHeight: "10px", textAlign: "center" })}>{match.s2}</div>
     </>
   );
 }
@@ -293,8 +199,114 @@ function Meldeliste() {
   );
 }
 
+function ConnectorLayer({ rounds }: { rounds: Record<string, MatchData[]> }) {
+  const r1 = rounds.R1 || [];
+  const r2 = rounds.R2 || [];
+  const r3 = rounds.R3 || [];
+  const r4 = rounds.R4 || [];
+  const r5 = rounds.R5 || [];
+  const l1 = rounds.L1 || [];
+  const l2 = rounds.L2 || [];
+  const l3 = rounds.L3 || [];
+  const l4 = rounds.L4 || [];
+  const l5 = rounds.L5 || [];
+  const l6 = rounds.L6 || [];
+  const l7 = rounds.L7 || [];
+  const l8 = rounds.L8 || [];
+  const finale = rounds.F || [];
+
+  return (
+    <svg style={{ position: "absolute", inset: 0, pointerEvents: "none" }} viewBox={`0 0 ${boardW - 40} ${boardH}`}>
+      <g stroke={palette.line} strokeWidth="1" fill="none" strokeLinecap="square">
+        {groupConnectors(r1, r2, "right")}
+        {groupConnectors(r2, r3, "right")}
+        {groupConnectors(r3, r4, "right")}
+        {groupConnectors(r4, r5, "right")}
+        {groupConnectors(l1, l2, "left", false)}
+        {groupConnectors(l2, l3, "left")}
+        {groupConnectors(l3, l4, "left", false)}
+        {groupConnectors(l4, l5, "left")}
+        {groupConnectors(l5, l6, "left", false)}
+        {groupConnectors(l6, l7, "left")}
+        {l7[0] && l8[0] ? customConnector(l7[0], l8[0], "left", "l7-l8") : null}
+        {r5[0] && finale[0] ? customConnector(r5[0], finale[0], "right", "r5-finale") : null}
+        {l8[0] && finale[0] ? (
+          <>
+            <line x1={l8[0].originX} y1={yMid(l8[0])} x2={l8[0].originX - 18} y2={yMid(l8[0])} />
+            <line x1={l8[0].originX - 18} y1={yMid(l8[0])} x2={l8[0].originX - 18} y2={boardH - 440} />
+            <line x1={l8[0].originX - 18} y1={boardH - 440} x2={finale[0].originX + 15} y2={boardH - 440} />
+            <line x1={finale[0].originX + 15} y1={boardH - 440} x2={finale[0].originX + 15} y2={yMid(finale[0])} />
+          </>
+        ) : null}
+      </g>
+    </svg>
+  );
+}
+
 export default function App() {
   const effectiveTemplate = withOffsets(frozenTemplate, 29, 3, -6);
+  const [matches, setMatches] = useState<MatchData[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadMatches = async () => {
+      const { data, error } = await supabase
+        .from("matches_with_names")
+        .select("id, match_no, bracket, source_top, source_bottom, player_top_name, player_bottom_name, sets_top, sets_bottom, x_pos, y_pos")
+        .order("match_no", { ascending: true });
+
+      if (ignore) return;
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      setError("");
+      setMatches((data || []).map((row) => normalizeMatch(row as DbMatch)));
+    };
+
+    loadMatches();
+
+    const channel = supabase
+      .channel("matches-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, () => {
+        loadMatches();
+      })
+      .subscribe();
+
+    return () => {
+      ignore = true;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const rounds = useMemo(() => {
+    const groups: Record<string, MatchData[]> = {};
+    const classify = (matchNo: number) =>
+      matchNo >= 1 && matchNo <= 16 ? "R1" :
+      matchNo >= 17 && matchNo <= 24 ? "R2" :
+      matchNo >= 25 && matchNo <= 32 ? "L1" :
+      matchNo >= 33 && matchNo <= 36 ? "R3" :
+      matchNo >= 37 && matchNo <= 44 ? "L2" :
+      matchNo >= 45 && matchNo <= 48 ? "L3" :
+      matchNo >= 49 && matchNo <= 50 ? "R4" :
+      matchNo >= 51 && matchNo <= 54 ? "L4" :
+      matchNo >= 55 && matchNo <= 56 ? "L5" :
+      matchNo === 57 ? "R5" :
+      matchNo >= 58 && matchNo <= 59 ? "L6" :
+      matchNo === 60 ? "L7" :
+      matchNo === 61 ? "L8" :
+      matchNo === 62 ? "F" : "X";
+
+    for (const match of matches) {
+      const key = classify(match.matchNo);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(match);
+    }
+    for (const key of Object.keys(groups)) groups[key].sort((a, b) => a.matchNo - b.matchNo);
+    return groups;
+  }, [matches]);
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", overflow: "auto", padding: 24, background: palette.page }}>
@@ -306,9 +318,15 @@ export default function App() {
           <div style={{ transform: "translateX(-200px)" }}>Endrunde am xx.xx.2026</div>
         </div>
 
+        {error ? (
+          <div style={{ marginBottom: 12, padding: 12, background: "#fff3f3", color: "#8a1f1f", border: "1px solid #d9a0a0", borderRadius: 8 }}>
+            Supabase-Fehler: {error}
+          </div>
+        ) : null}
+
         <div style={{ position: "relative", width: boardW - 40, height: 1080, overflow: "hidden", border: `1px solid ${palette.border}`, borderRadius: 12, background: "rgba(255,255,255,0.18)", boxSizing: "border-box" }}>
           <div style={abs(dividerLeftX, 0, { width: Math.max(0, dividerRightX - dividerLeftX), height: "100%", background: palette.middleBand })} />
-          <ConnectorLayer />
+          <ConnectorLayer rounds={rounds} />
 
           <div style={abs(938, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R1</div>
           <div style={abs(1028, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R2</div>
@@ -326,20 +344,7 @@ export default function App() {
           <div style={abs(68, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L8</div>
 
           <Meldeliste />
-          {winnersR1.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {winnersR2.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {winnersR3.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {winnersR4.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {winnersR5.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {finale.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {losersR1.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {losersR2.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {losersR3.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {losersR4.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {losersR5.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {losersR6.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {losersR7.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          {losersR8.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
+          {matches.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
         </div>
       </div>
     </div>

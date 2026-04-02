@@ -1,1 +1,1 @@
-Vercel-fertiges Vite/React-Projekt ohne Tailwind-Abhängigkeit.
+Supabase-Version für Vercel.
