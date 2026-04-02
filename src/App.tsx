@@ -168,23 +168,13 @@ function withOffsets(template: Template, commonOffset: number, topNameOffset: nu
 function yMid(match: MatchData) {
   return match.originY + boxH / 2;
 }
-
-function xRight(match: MatchData) {
-  return match.originX + boxW;
-}
-
-function xLeft(match: MatchData) {
-  return match.originX;
-}
-
-function targetOriginRight(match: MatchData) {
-  return match.originX + boxW;
-}
+function xRight(match: MatchData) { return match.originX + boxW; }
+function xLeft(match: MatchData) { return match.originX; }
+function targetOriginRight(match: MatchData) { return match.originX + boxW; }
 
 function groupConnectors(from: MatchData[], to: MatchData[], direction: "right" | "left", drawVertical: boolean = true) {
   const lines: React.ReactNode[] = [];
   const cap = Math.min(Math.floor(from.length / 2), to.length);
-
   for (let i = 0; i < cap; i++) {
     const a = from[i * 2];
     const b = from[i * 2 + 1];
@@ -192,26 +182,20 @@ function groupConnectors(from: MatchData[], to: MatchData[], direction: "right" 
     const ay = yMid(a);
     const by = yMid(b);
     const ty = yMid(target);
-
     if (direction === "right") {
       const joinX = target.originX - 16;
       lines.push(<line key={`ha-${a.id}-${target.id}`} x1={xRight(a)} y1={ay} x2={joinX} y2={ay} />);
       lines.push(<line key={`hb-${b.id}-${target.id}`} x1={xRight(b)} y1={by} x2={joinX} y2={by} />);
-      if (drawVertical) {
-        lines.push(<line key={`va-${target.id}`} x1={joinX} y1={ay} x2={joinX} y2={by} />);
-      }
+      if (drawVertical) lines.push(<line key={`va-${target.id}`} x1={joinX} y1={ay} x2={joinX} y2={by} />);
       lines.push(<line key={`ta-${target.id}`} x1={joinX} y1={ty} x2={target.originX} y2={ty} />);
     } else {
       const joinX = target.originX + boxW + 16;
       lines.push(<line key={`ha-${a.id}-${target.id}`} x1={xLeft(a)} y1={ay} x2={joinX} y2={ay} />);
       lines.push(<line key={`hb-${b.id}-${target.id}`} x1={xLeft(b)} y1={by} x2={joinX} y2={by} />);
-      if (drawVertical) {
-        lines.push(<line key={`va-${target.id}`} x1={joinX} y1={ay} x2={joinX} y2={by} />);
-      }
-      lines.push(<line key={`ta-${target.id}`} x1={target.originX + boxW} y1={ty} x2={joinX} y2={ty} />);
+      if (drawVertical) lines.push(<line key={`va-${target.id}`} x1={joinX} y1={ay} x2={joinX} y2={by} />);
+      lines.push(<line key={`ta-${target.id}`} x1={targetOriginRight(target)} y1={ty} x2={joinX} y2={ty} />);
     }
   }
-
   return lines;
 }
 
@@ -236,13 +220,12 @@ function customConnector(from: MatchData, to: MatchData, direction: "right" | "l
 
 function ConnectorLayer() {
   return (
-    <svg className="absolute inset-0 pointer-events-none" viewBox={`0 0 ${boardW - 40} ${boardH}`}>
+    <svg style={{ position: "absolute", inset: 0, pointerEvents: "none" }} viewBox={`0 0 ${boardW - 40} ${boardH}`}>
       <g stroke={palette.line} strokeWidth="1" fill="none" strokeLinecap="square">
         {groupConnectors(winnersR1, winnersR2, "right")}
         {groupConnectors(winnersR2, winnersR3, "right")}
         {groupConnectors(winnersR3, winnersR4, "right")}
         {groupConnectors(winnersR4, winnersR5, "right")}
-
         {groupConnectors(losersR1, losersR2, "left", false)}
         {groupConnectors(losersR2, losersR3, "left")}
         {groupConnectors(losersR3, losersR4, "left", false)}
@@ -260,6 +243,13 @@ function ConnectorLayer() {
   );
 }
 
+const abs = (left: number, top: number, extra: React.CSSProperties = {}): React.CSSProperties => ({
+  position: "absolute",
+  left,
+  top,
+  ...extra,
+});
+
 function MatchBox({ match, template }: { match: MatchData; template: Template }) {
   const name1Top = match.originY + (template.name1.y - frozenTemplate.box.y);
   const name2Top = match.originY + (template.name2.y - frozenTemplate.box.y);
@@ -271,14 +261,14 @@ function MatchBox({ match, template }: { match: MatchData; template: Template })
 
   return (
     <>
-      <div className="absolute rounded-[7px] border shadow-sm" style={{ left: match.originX, top: match.originY, width: boxW, height: boxH, background: palette.winner, borderColor: palette.border, boxSizing: "border-box" }} />
-      <div className="absolute flex items-center justify-center text-[18px] font-bold leading-none" style={{ left: match.originX, top: match.originY, width: boxW, height: boxH, color: palette.text }}>{match.id}</div>
-      <div className="absolute text-center leading-none" style={{ left: match.originX, top: name1Top, width: boxW, color: palette.text, fontSize: nameFontSize }}>{match.p1}</div>
-      <div className="absolute text-center leading-none" style={{ left: match.originX, top: name2Top, width: boxW, color: palette.text, fontSize: nameFontSize }}>{match.p2}</div>
-      <div className="absolute" style={{ left: scoreColumnX, top: match.originY, width: 1, height: boxH, background: palette.border }} />
-      <div className="absolute" style={{ left: scoreColumnX, top: scoreMidY, width: scoreWidth, height: 1, background: palette.border }} />
-      <div className="absolute flex items-center justify-center text-[11px] font-semibold leading-none" style={{ left: scoreColumnX, top: score1Top, width: scoreWidth, height: 10, color: palette.text }}>2</div>
-      <div className="absolute flex items-center justify-center text-[11px] font-semibold leading-none" style={{ left: scoreColumnX, top: score2Top, width: scoreWidth, height: 10, color: palette.text }}>1</div>
+      <div style={abs(match.originX, match.originY, { width: boxW, height: boxH, background: palette.winner, border: `1px solid ${palette.border}`, borderRadius: 7, boxShadow: "0 1px 2px rgba(0,0,0,0.12)", boxSizing: "border-box" })} />
+      <div style={abs(match.originX, match.originY, { width: boxW, height: boxH, color: palette.text, fontSize: 18, fontWeight: 700, lineHeight: `${boxH}px`, textAlign: "center" })}>{match.id}</div>
+      <div style={abs(match.originX, name1Top, { width: boxW, color: palette.text, fontSize: nameFontSize, textAlign: "center", lineHeight: 1 })}>{match.p1}</div>
+      <div style={abs(match.originX, name2Top, { width: boxW, color: palette.text, fontSize: nameFontSize, textAlign: "center", lineHeight: 1 })}>{match.p2}</div>
+      <div style={abs(scoreColumnX, match.originY, { width: 1, height: boxH, background: palette.border })} />
+      <div style={abs(scoreColumnX, scoreMidY, { width: scoreWidth, height: 1, background: palette.border })} />
+      <div style={abs(scoreColumnX, score1Top, { width: scoreWidth, height: 10, color: palette.text, fontSize: 11, fontWeight: 600, lineHeight: "10px", textAlign: "center" })}>2</div>
+      <div style={abs(scoreColumnX, score2Top, { width: scoreWidth, height: 10, color: palette.text, fontSize: 11, fontWeight: 600, lineHeight: "10px", textAlign: "center" })}>1</div>
     </>
   );
 }
@@ -286,15 +276,15 @@ function MatchBox({ match, template }: { match: MatchData; template: Template })
 function Meldeliste() {
   return (
     <>
-      <div className="absolute left-[780px] top-[64px] text-[16px] font-bold" style={{ color: palette.text }}>Meldeliste</div>
-      <div className="absolute left-[765px] top-[110px] w-[120px]">
+      <div style={abs(780, 64, { color: palette.text, fontSize: 16, fontWeight: 700 })}>Meldeliste</div>
+      <div style={abs(765, 110, { width: 120 })}>
         {players.map((name, i) => {
           const top = 14 + i * 29 - 23;
           return (
-            <div key={name} className="absolute left-0 right-0 leading-none" style={{ top, color: palette.text, fontSize: listFontSize }}>
-              <div className="absolute left-0 right-0 h-px" style={{ top: 14, background: palette.border, opacity: 0.8 }} />
-              <span className="inline-block w-5 text-right">{i + 1}</span>
-              <span className="ml-2">{name}</span>
+            <div key={name} style={abs(0, top, { right: 0, color: palette.text, fontSize: listFontSize, lineHeight: 1 })}>
+              <div style={abs(0, 14, { right: 0, height: 1, background: palette.border, opacity: 0.8 })} />
+              <span style={{ display: "inline-block", width: 20, textAlign: "right" }}>{i + 1}</span>
+              <span style={{ marginLeft: 8 }}>{name}</span>
             </div>
           );
         })}
@@ -307,45 +297,41 @@ export default function App() {
   const effectiveTemplate = withOffsets(frozenTemplate, 29, 3, -6);
 
   return (
-    <div className="min-h-screen w-full overflow-auto p-6" style={{ background: palette.page }}>
-      <div className="mx-auto rounded-xl p-5 shadow-xl" style={{ width: boardW, background: palette.board }}>
-        <div className="mb-2 text-[34px] font-bold text-center" style={{ color: palette.text }}>3. Resi Tischtennisturnier 2026</div>
-        <div className="mb-4 flex items-center justify-between text-[16px] font-semibold" style={{ color: palette.text }}>
+    <div style={{ minHeight: "100vh", width: "100%", overflow: "auto", padding: 24, background: palette.page }}>
+      <div style={{ width: boardW, margin: "0 auto", background: palette.board, borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", boxSizing: "border-box" }}>
+        <div style={{ marginBottom: 8, color: palette.text, fontSize: 34, fontWeight: 700, textAlign: "center" }}>3. Resi Tischtennisturnier 2026</div>
+        <div style={{ marginBottom: 16, color: palette.text, fontSize: 16, fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ transform: "translateX(150px)" }}>Endrunde am xx.xx.2026</div>
           <div>Zu spielen bis "xx.xx.2026"</div>
           <div style={{ transform: "translateX(-200px)" }}>Endrunde am xx.xx.2026</div>
         </div>
 
-        <div className="relative overflow-hidden rounded-lg border" style={{ width: boardW - 40, height: 1080, borderColor: palette.border, background: "rgba(255,255,255,0.18)" }}>
-          <div className="absolute top-0 bottom-0" style={{ left: dividerLeftX, width: Math.max(0, dividerRightX - dividerLeftX), background: palette.middleBand }} />
-
+        <div style={{ position: "relative", width: boardW - 40, height: 1080, overflow: "hidden", border: `1px solid ${palette.border}`, borderRadius: 12, background: "rgba(255,255,255,0.18)", boxSizing: "border-box" }}>
+          <div style={abs(dividerLeftX, 0, { width: Math.max(0, dividerRightX - dividerLeftX), height: "100%", background: palette.middleBand })} />
           <ConnectorLayer />
 
-          <div className="absolute left-[938px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>R1</div>
-          <div className="absolute left-[1028px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>R2</div>
-          <div className="absolute left-[1123px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>R3</div>
-          <div className="absolute left-[1208px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>R4</div>
-          <div className="absolute left-[1293px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>R5</div>
-          <div className="absolute left-[1378px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>Finale</div>
-
-          <div className="absolute left-[683px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>L1</div>
-          <div className="absolute left-[593px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>L2</div>
-          <div className="absolute left-[503px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>L3</div>
-          <div className="absolute left-[416px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>L4</div>
-          <div className="absolute left-[329px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>L5</div>
-          <div className="absolute left-[242px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>L6</div>
-          <div className="absolute left-[155px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>L7</div>
-          <div className="absolute left-[68px] top-[64px] text-[16px] font-bold" style={{ color: palette.blue }}>L8</div>
+          <div style={abs(938, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R1</div>
+          <div style={abs(1028, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R2</div>
+          <div style={abs(1123, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R3</div>
+          <div style={abs(1208, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R4</div>
+          <div style={abs(1293, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R5</div>
+          <div style={abs(1378, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>Finale</div>
+          <div style={abs(683, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L1</div>
+          <div style={abs(593, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L2</div>
+          <div style={abs(503, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L3</div>
+          <div style={abs(416, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L4</div>
+          <div style={abs(329, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L5</div>
+          <div style={abs(242, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L6</div>
+          <div style={abs(155, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L7</div>
+          <div style={abs(68, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L8</div>
 
           <Meldeliste />
-
           {winnersR1.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
           {winnersR2.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
           {winnersR3.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
           {winnersR4.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
           {winnersR5.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
           {finale.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-
           {losersR1.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
           {losersR2.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
           {losersR3.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
