@@ -33,6 +33,8 @@ type DbTournament = {
   title: string;
   homepage_news: string | null;
   show_homepage_news: boolean | null;
+  play_until_text: string | null;
+  finals_text: string | null;
 };
 
 type Template = {
@@ -110,22 +112,33 @@ function withOffsets(template: Template, commonOffset: number, topNameOffset: nu
   };
 }
 
-function yMid(match: MatchData) { return match.originY + boxH / 2; }
-function xRight(match: MatchData) { return match.originX + boxW; }
-function xLeft(match: MatchData) { return match.originX; }
-function targetOriginRight(match: MatchData) { return match.originX + boxW; }
+function yMid(match: MatchData) {
+  return match.originY + boxH / 2;
+}
+function xRight(match: MatchData) {
+  return match.originX + boxW;
+}
+function xLeft(match: MatchData) {
+  return match.originX;
+}
+function targetOriginRight(match: MatchData) {
+  return match.originX + boxW;
+}
 
 function groupConnectors(from: MatchData[], to: MatchData[], direction: "right" | "left", drawVertical: boolean = true) {
   const lines: React.ReactNode[] = [];
   const cap = Math.min(Math.floor(from.length / 2), to.length);
+
   for (let i = 0; i < cap; i++) {
     const a = from[i * 2];
     const b = from[i * 2 + 1];
     const target = to[i];
     if (!a || !b || !target) continue;
+
     const ay = yMid(a);
     const by = yMid(b);
     const ty = yMid(target);
+
     if (direction === "right") {
       const joinX = target.originX - 16;
       lines.push(<line key={`ha-${a.id}-${target.id}`} x1={xRight(a)} y1={ay} x2={joinX} y2={ay} />);
@@ -140,12 +153,14 @@ function groupConnectors(from: MatchData[], to: MatchData[], direction: "right" 
       lines.push(<line key={`ta-${target.id}`} x1={targetOriginRight(target)} y1={ty} x2={joinX} y2={ty} />);
     }
   }
+
   return lines;
 }
 
 function customConnector(from: MatchData, to: MatchData, direction: "right" | "left", keyBase: string) {
   const fy = yMid(from);
   const ty = yMid(to);
+
   if (direction === "right") {
     const joinX = to.originX - 16;
     return [
@@ -154,6 +169,7 @@ function customConnector(from: MatchData, to: MatchData, direction: "right" | "l
       <line key={`${keyBase}-3`} x1={joinX} y1={ty} x2={to.originX} y2={ty} />,
     ];
   }
+
   const joinX = to.originX + boxW + 16;
   return [
     <line key={`${keyBase}-1`} x1={xLeft(from)} y1={fy} x2={joinX} y2={fy} />,
@@ -181,58 +197,80 @@ function MatchBox({ match, template }: { match: MatchData; template: Template })
 
   return (
     <>
-      <div style={abs(match.originX, match.originY, {
-        width: boxW,
-        height: boxH,
-        background: fillColor,
-        border: `1px solid ${palette.border}`,
-        borderRadius: 7,
-        boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
-        boxSizing: "border-box"
-      })} />
-      <div style={abs(match.originX, match.originY, {
-        width: boxW,
-        height: boxH,
-        color: palette.text,
-        fontSize: 18,
-        fontWeight: 700,
-        lineHeight: `${boxH}px`,
-        textAlign: "center"
-      })}>{match.id}</div>
-      <div style={abs(match.originX, name1Top, {
-        width: boxW,
-        color: palette.text,
-        fontSize: nameFontSize,
-        textAlign: "center",
-        lineHeight: 1
-      })}>{match.p1}</div>
-      <div style={abs(match.originX, name2Top, {
-        width: boxW,
-        color: palette.text,
-        fontSize: nameFontSize,
-        textAlign: "center",
-        lineHeight: 1
-      })}>{match.p2}</div>
+      <div
+        style={abs(match.originX, match.originY, {
+          width: boxW,
+          height: boxH,
+          background: fillColor,
+          border: `1px solid ${palette.border}`,
+          borderRadius: 7,
+          boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
+          boxSizing: "border-box",
+        })}
+      />
+      <div
+        style={abs(match.originX, match.originY, {
+          width: boxW,
+          height: boxH,
+          color: palette.text,
+          fontSize: 18,
+          fontWeight: 700,
+          lineHeight: `${boxH}px`,
+          textAlign: "center",
+        })}
+      >
+        {match.id}
+      </div>
+      <div
+        style={abs(match.originX, name1Top, {
+          width: boxW,
+          color: palette.text,
+          fontSize: nameFontSize,
+          textAlign: "center",
+          lineHeight: 1,
+        })}
+      >
+        {match.p1}
+      </div>
+      <div
+        style={abs(match.originX, name2Top, {
+          width: boxW,
+          color: palette.text,
+          fontSize: nameFontSize,
+          textAlign: "center",
+          lineHeight: 1,
+        })}
+      >
+        {match.p2}
+      </div>
       <div style={abs(scoreColumnX, match.originY, { width: 1, height: boxH, background: palette.border })} />
       <div style={abs(scoreColumnX, scoreMidY, { width: scoreWidth, height: 1, background: palette.border })} />
-      <div style={abs(scoreColumnX, score1Top, {
-        width: scoreWidth,
-        height: 10,
-        color: palette.text,
-        fontSize: 11,
-        fontWeight: 600,
-        lineHeight: "10px",
-        textAlign: "center"
-      })}>{match.s1}</div>
-      <div style={abs(scoreColumnX, score2Top, {
-        width: scoreWidth,
-        height: 10,
-        color: palette.text,
-        fontSize: 11,
-        fontWeight: 600,
-        lineHeight: "10px",
-        textAlign: "center"
-      })}>{match.s2}</div>
+      <div
+        style={abs(scoreColumnX, score1Top, {
+          width: scoreWidth,
+          height: 10,
+          color: palette.text,
+          fontSize: 11,
+          fontWeight: 600,
+          lineHeight: "10px",
+          textAlign: "center",
+        })}
+      >
+        {match.s1}
+      </div>
+      <div
+        style={abs(scoreColumnX, score2Top, {
+          width: scoreWidth,
+          height: 10,
+          color: palette.text,
+          fontSize: 11,
+          fontWeight: 600,
+          lineHeight: "10px",
+          textAlign: "center",
+        })}
+      >
+        {match.s2}
+      </div>
     </>
   );
 }
@@ -266,7 +304,7 @@ function BestOfLegend() {
         background: "rgba(255,255,255,0.55)",
         border: `1px solid ${palette.border}`,
         borderRadius: 12,
-        boxSizing: "border-box"
+        boxSizing: "border-box",
       })}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
@@ -276,7 +314,7 @@ function BestOfLegend() {
             height: 20,
             background: palette.winner,
             border: `1px solid ${palette.border}`,
-            borderRadius: 6
+            borderRadius: 6,
           }}
         />
         <div style={{ fontSize: 12, color: palette.text }}>Best of 3</div>
@@ -289,7 +327,7 @@ function BestOfLegend() {
             height: 20,
             background: palette.bestOf5,
             border: `1px solid ${palette.border}`,
-            borderRadius: 6
+            borderRadius: 6,
           }}
         />
         <div style={{ fontSize: 12, color: palette.text }}>Best of 5</div>
@@ -310,19 +348,17 @@ function NewsPanel({ text, visible }: { text: string; visible: boolean }) {
         background: "rgba(255,255,255,0.55)",
         border: `1px solid ${palette.border}`,
         borderRadius: 12,
-        boxSizing: "border-box"
+        boxSizing: "border-box",
       })}
     >
-      <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, marginBottom: 10 }}>
-        Aktuelle Nachrichten
-      </div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, marginBottom: 10 }}>Aktuelle Nachrichten</div>
       <div
         style={{
           fontSize: 12,
           color: palette.text,
           lineHeight: 1.35,
           whiteSpace: "pre-wrap",
-          wordBreak: "break-word"
+          wordBreak: "break-word",
         }}
       >
         {text}
@@ -334,11 +370,11 @@ function NewsPanel({ text, visible }: { text: string; visible: boolean }) {
 function TrophyPanel() {
   return (
     <div
-      style={abs(1450, 300, {
-        width: 185,
+      style={abs(1385, 235, {
+        width: 250,
         display: "flex",
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
       })}
     >
       <img
@@ -347,7 +383,7 @@ function TrophyPanel() {
         style={{
           width: "100%",
           height: "auto",
-          objectFit: "contain"
+          objectFit: "contain",
         }}
       />
     </div>
@@ -385,12 +421,14 @@ function ConnectorLayer({ rounds }: { rounds: Record<string, MatchData[]> }) {
         {groupConnectors(l6, l7, "left")}
         {l7[0] && l8[0] ? customConnector(l7[0], l8[0], "left", "l7-l8") : null}
         {r5[0] && finale[0] ? customConnector(r5[0], finale[0], "right", "r5-finale") : null}
-        {l8[0] && finale[0] ? <>
-          <line x1={l8[0].originX} y1={yMid(l8[0])} x2={l8[0].originX - 18} y2={yMid(l8[0])} />
-          <line x1={l8[0].originX - 18} y1={yMid(l8[0])} x2={l8[0].originX - 18} y2={boardH - 440} />
-          <line x1={l8[0].originX - 18} y1={boardH - 440} x2={finale[0].originX + 15} y2={boardH - 440} />
-          <line x1={finale[0].originX + 15} y1={boardH - 440} x2={finale[0].originX + 15} y2={yMid(finale[0])} />
-        </> : null}
+        {l8[0] && finale[0] ? (
+          <>
+            <line x1={l8[0].originX} y1={yMid(l8[0])} x2={l8[0].originX - 18} y2={yMid(l8[0])} />
+            <line x1={l8[0].originX - 18} y1={yMid(l8[0])} x2={l8[0].originX - 18} y2={boardH - 440} />
+            <line x1={l8[0].originX - 18} y1={boardH - 440} x2={finale[0].originX + 15} y2={boardH - 440} />
+            <line x1={finale[0].originX + 15} y1={boardH - 440} x2={finale[0].originX + 15} y2={yMid(finale[0])} />
+          </>
+        ) : null}
       </g>
     </svg>
   );
@@ -433,7 +471,7 @@ export default function App() {
 
       const { data: tournamentData, error: tournamentError } = await supabase
         .from("tournaments")
-        .select("id, title, homepage_news, show_homepage_news")
+        .select("id, title, homepage_news, show_homepage_news, play_until_text, finals_text")
         .eq("id", TOURNAMENT_ID)
         .single();
 
@@ -487,31 +525,89 @@ export default function App() {
       if (!groups[key]) groups[key] = [];
       groups[key].push(match);
     }
-    for (const key of Object.keys(groups)) groups[key].sort((a, b) => a.matchNo - b.matchNo);
+
+    for (const key of Object.keys(groups)) {
+      groups[key].sort((a, b) => a.matchNo - b.matchNo);
+    }
+
     return groups;
   }, [matches]);
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", overflow: "auto", padding: 24, background: palette.page }}>
-      <div style={{ width: boardW, margin: "0 auto", background: palette.board, borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", boxSizing: "border-box" }}>
+      <div
+        style={{
+          width: boardW,
+          margin: "0 auto",
+          background: palette.board,
+          borderRadius: 16,
+          padding: 20,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+          boxSizing: "border-box",
+        }}
+      >
         <div style={{ marginBottom: 8, color: palette.text, fontSize: 34, fontWeight: 700, textAlign: "center" }}>
           {tournament?.title || "3. Resi Tischtennisturnier 2026"}
         </div>
-        <div style={{ marginBottom: 16, color: palette.text, fontSize: 16, fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ transform: "translateX(150px)" }}>Endrunde am xx.xx.2026</div>
-          <div>Zu spielen bis "xx.xx.2026"</div>
-          <div style={{ transform: "translateX(-200px)" }}>Endrunde am xx.xx.2026</div>
+
+        <div
+          style={{
+            marginBottom: 16,
+            color: palette.text,
+            fontSize: 16,
+            fontWeight: 600,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ transform: "translateX(150px)" }}>
+            {tournament?.finals_text || "Endrunde am xx.xx.2026"}
+          </div>
+          <div>
+            {tournament?.play_until_text || 'Zu spielen bis "xx.xx.2026"'}
+          </div>
+          <div style={{ transform: "translateX(-200px)" }}>
+            {tournament?.finals_text || "Endrunde am xx.xx.2026"}
+          </div>
         </div>
 
         {error ? (
-          <div style={{ marginBottom: 12, padding: 12, background: "#fff3f3", color: "#8a1f1f", border: "1px solid #d9a0a0", borderRadius: 8 }}>
+          <div
+            style={{
+              marginBottom: 12,
+              padding: 12,
+              background: "#fff3f3",
+              color: "#8a1f1f",
+              border: "1px solid #d9a0a0",
+              borderRadius: 8,
+            }}
+          >
             Supabase-Fehler: {error}
           </div>
         ) : null}
 
-        <div style={{ position: "relative", width: boardW - 40, height: 1080, overflow: "hidden", border: `1px solid ${palette.border}`, borderRadius: 12, background: "rgba(255,255,255,0.18)", boxSizing: "border-box" }}>
-          <div style={abs(dividerLeftX, 0, { width: Math.max(0, dividerRightX - dividerLeftX), height: "100%", background: palette.middleBand })} />
+        <div
+          style={{
+            position: "relative",
+            width: boardW - 40,
+            height: 1080,
+            overflow: "hidden",
+            border: `1px solid ${palette.border}`,
+            borderRadius: 12,
+            background: "rgba(255,255,255,0.18)",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            style={abs(dividerLeftX, 0, {
+              width: Math.max(0, dividerRightX - dividerLeftX),
+              height: "100%",
+              background: palette.middleBand,
+            })}
+          />
           <ConnectorLayer rounds={rounds} />
+
           <div style={abs(938, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R1</div>
           <div style={abs(1028, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R2</div>
           <div style={abs(1123, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R3</div>
