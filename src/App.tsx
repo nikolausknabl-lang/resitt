@@ -28,6 +28,13 @@ type DbPlayer = {
   is_active: boolean;
 };
 
+type DbTournament = {
+  id: string;
+  title: string;
+  homepage_news: string | null;
+  show_homepage_news: boolean | null;
+};
+
 type Template = {
   box: { x: number; y: number };
   name1: { x: number; y: number };
@@ -253,8 +260,8 @@ function Meldeliste({ players }: { players: DbPlayer[] }) {
 function BestOfLegend() {
   return (
     <div
-      style={abs(1460, 980, {
-        width: 170,
+      style={abs(1455, 905, {
+        width: 175,
         padding: 12,
         background: "rgba(255,255,255,0.55)",
         border: `1px solid ${palette.border}`,
@@ -262,10 +269,6 @@ function BestOfLegend() {
         boxSizing: "border-box"
       })}
     >
-      <div style={{ fontSize: 13, fontWeight: 700, color: palette.text, marginBottom: 10 }}>
-        Erläuterung
-      </div>
-
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
         <div
           style={{
@@ -291,6 +294,62 @@ function BestOfLegend() {
         />
         <div style={{ fontSize: 12, color: palette.text }}>Best of 5</div>
       </div>
+    </div>
+  );
+}
+
+function NewsPanel({ text, visible }: { text: string; visible: boolean }) {
+  if (!visible || !text.trim()) return null;
+
+  return (
+    <div
+      style={abs(1450, 80, {
+        width: 185,
+        minHeight: 160,
+        padding: 12,
+        background: "rgba(255,255,255,0.55)",
+        border: `1px solid ${palette.border}`,
+        borderRadius: 12,
+        boxSizing: "border-box"
+      })}
+    >
+      <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, marginBottom: 10 }}>
+        Aktuelle Nachrichten
+      </div>
+      <div
+        style={{
+          fontSize: 12,
+          color: palette.text,
+          lineHeight: 1.35,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word"
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function TrophyPanel() {
+  return (
+    <div
+      style={abs(1450, 300, {
+        width: 185,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
+      })}
+    >
+      <img
+        src="/trophy.png"
+        alt="Pokal"
+        style={{
+          width: "100%",
+          height: "auto",
+          objectFit: "contain"
+        }}
+      />
     </div>
   );
 }
@@ -341,6 +400,7 @@ export default function App() {
   const effectiveTemplate = withOffsets(frozenTemplate, 29, 3, -6);
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [players, setPlayers] = useState<DbPlayer[]>([]);
+  const [tournament, setTournament] = useState<DbTournament | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -371,9 +431,22 @@ export default function App() {
         return;
       }
 
+      const { data: tournamentData, error: tournamentError } = await supabase
+        .from("tournaments")
+        .select("id, title, homepage_news, show_homepage_news")
+        .eq("id", TOURNAMENT_ID)
+        .single();
+
+      if (ignore) return;
+      if (tournamentError) {
+        setError(tournamentError.message);
+        return;
+      }
+
       setError("");
       setMatches((matchData || []).map((row) => normalizeMatch(row as DbMatch)));
       setPlayers(((playerData || []) as DbPlayer[]).filter((p) => p.is_active !== false));
+      setTournament((tournamentData || null) as DbTournament | null);
     };
 
     loadData();
@@ -382,6 +455,7 @@ export default function App() {
       .channel("matches-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, loadData)
       .on("postgres_changes", { event: "*", schema: "public", table: "players" }, loadData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tournaments" }, loadData)
       .subscribe();
 
     return () => {
@@ -420,7 +494,9 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", width: "100%", overflow: "auto", padding: 24, background: palette.page }}>
       <div style={{ width: boardW, margin: "0 auto", background: palette.board, borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", boxSizing: "border-box" }}>
-        <div style={{ marginBottom: 8, color: palette.text, fontSize: 34, fontWeight: 700, textAlign: "center" }}>3. Resi Tischtennisturnier 2026</div>
+        <div style={{ marginBottom: 8, color: palette.text, fontSize: 34, fontWeight: 700, textAlign: "center" }}>
+          {tournament?.title || "3. Resi Tischtennisturnier 2026"}
+        </div>
         <div style={{ marginBottom: 16, color: palette.text, fontSize: 16, fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ transform: "translateX(150px)" }}>Endrunde am xx.xx.2026</div>
           <div>Zu spielen bis "xx.xx.2026"</div>
@@ -453,6 +529,8 @@ export default function App() {
 
           <Meldeliste players={players} />
           {matches.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
+          <NewsPanel text={tournament?.homepage_news ?? ""} visible={tournament?.show_homepage_news ?? false} />
+          <TrophyPanel />
           <BestOfLegend />
         </div>
       </div>
