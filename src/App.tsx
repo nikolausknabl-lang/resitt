@@ -18,6 +18,7 @@ type DbMatch = {
   sets_bottom: number | null;
   x_pos: number | string;
   y_pos: number | string;
+  best_of: number | null;
 };
 
 type DbPlayer = {
@@ -44,12 +45,14 @@ type MatchData = {
   s2: number;
   originX: number;
   originY: number;
+  bestOf: number;
 };
 
 const palette = {
   page: "#e4cd6f",
   board: "#efe8c7",
   winner: "#dcedfb",
+  bestOf5: "#f6d7a8",
   border: "#8d6d1f",
   text: "#1f2a37",
   blue: "#3b74b6",
@@ -58,6 +61,7 @@ const palette = {
 };
 
 const TOURNAMENT_ID = "422a142f-2bf0-44c8-817d-7cf5f769a2a5";
+
 const boardW = 1700;
 const boardH = 1500;
 const boxW = 82;
@@ -85,6 +89,7 @@ function normalizeMatch(row: DbMatch): MatchData {
     s2: Number(row.sets_bottom ?? 0),
     originX: Number(row.x_pos),
     originY: Number(row.y_pos),
+    bestOf: Number(row.best_of ?? 3),
   };
 }
 
@@ -150,7 +155,12 @@ function customConnector(from: MatchData, to: MatchData, direction: "right" | "l
   ];
 }
 
-const abs = (left: number, top: number, extra: React.CSSProperties = {}): React.CSSProperties => ({ position: "absolute", left, top, ...extra });
+const abs = (left: number, top: number, extra: React.CSSProperties = {}): React.CSSProperties => ({
+  position: "absolute",
+  left,
+  top,
+  ...extra,
+});
 
 function MatchBox({ match, template }: { match: MatchData; template: Template }) {
   const name1Top = match.originY + (template.name1.y - frozenTemplate.box.y);
@@ -160,17 +170,62 @@ function MatchBox({ match, template }: { match: MatchData; template: Template })
   const score2Top = match.originY + (template.score2.y - frozenTemplate.box.y);
   const scoreMidY = Math.round(match.originY + boxH / 2);
   const scoreWidth = boxW - (scoreColumnX - match.originX);
+  const fillColor = match.bestOf === 5 ? palette.bestOf5 : palette.winner;
 
   return (
     <>
-      <div style={abs(match.originX, match.originY, { width: boxW, height: boxH, background: palette.winner, border: `1px solid ${palette.border}`, borderRadius: 7, boxShadow: "0 1px 2px rgba(0,0,0,0.12)", boxSizing: "border-box" })} />
-      <div style={abs(match.originX, match.originY, { width: boxW, height: boxH, color: palette.text, fontSize: 18, fontWeight: 700, lineHeight: `${boxH}px`, textAlign: "center" })}>{match.id}</div>
-      <div style={abs(match.originX, name1Top, { width: boxW, color: palette.text, fontSize: nameFontSize, textAlign: "center", lineHeight: 1 })}>{match.p1}</div>
-      <div style={abs(match.originX, name2Top, { width: boxW, color: palette.text, fontSize: nameFontSize, textAlign: "center", lineHeight: 1 })}>{match.p2}</div>
+      <div style={abs(match.originX, match.originY, {
+        width: boxW,
+        height: boxH,
+        background: fillColor,
+        border: `1px solid ${palette.border}`,
+        borderRadius: 7,
+        boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
+        boxSizing: "border-box"
+      })} />
+      <div style={abs(match.originX, match.originY, {
+        width: boxW,
+        height: boxH,
+        color: palette.text,
+        fontSize: 18,
+        fontWeight: 700,
+        lineHeight: `${boxH}px`,
+        textAlign: "center"
+      })}>{match.id}</div>
+      <div style={abs(match.originX, name1Top, {
+        width: boxW,
+        color: palette.text,
+        fontSize: nameFontSize,
+        textAlign: "center",
+        lineHeight: 1
+      })}>{match.p1}</div>
+      <div style={abs(match.originX, name2Top, {
+        width: boxW,
+        color: palette.text,
+        fontSize: nameFontSize,
+        textAlign: "center",
+        lineHeight: 1
+      })}>{match.p2}</div>
       <div style={abs(scoreColumnX, match.originY, { width: 1, height: boxH, background: palette.border })} />
       <div style={abs(scoreColumnX, scoreMidY, { width: scoreWidth, height: 1, background: palette.border })} />
-      <div style={abs(scoreColumnX, score1Top, { width: scoreWidth, height: 10, color: palette.text, fontSize: 11, fontWeight: 600, lineHeight: "10px", textAlign: "center" })}>{match.s1}</div>
-      <div style={abs(scoreColumnX, score2Top, { width: scoreWidth, height: 10, color: palette.text, fontSize: 11, fontWeight: 600, lineHeight: "10px", textAlign: "center" })}>{match.s2}</div>
+      <div style={abs(scoreColumnX, score1Top, {
+        width: scoreWidth,
+        height: 10,
+        color: palette.text,
+        fontSize: 11,
+        fontWeight: 600,
+        lineHeight: "10px",
+        textAlign: "center"
+      })}>{match.s1}</div>
+      <div style={abs(scoreColumnX, score2Top, {
+        width: scoreWidth,
+        height: 10,
+        color: palette.text,
+        fontSize: 11,
+        fontWeight: 600,
+        lineHeight: "10px",
+        textAlign: "center"
+      })}>{match.s2}</div>
     </>
   );
 }
@@ -192,6 +247,51 @@ function Meldeliste({ players }: { players: DbPlayer[] }) {
         })}
       </div>
     </>
+  );
+}
+
+function BestOfLegend() {
+  return (
+    <div
+      style={abs(1460, 980, {
+        width: 170,
+        padding: 12,
+        background: "rgba(255,255,255,0.55)",
+        border: `1px solid ${palette.border}`,
+        borderRadius: 12,
+        boxSizing: "border-box"
+      })}
+    >
+      <div style={{ fontSize: 13, fontWeight: 700, color: palette.text, marginBottom: 10 }}>
+        Erläuterung
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <div
+          style={{
+            width: 34,
+            height: 20,
+            background: palette.winner,
+            border: `1px solid ${palette.border}`,
+            borderRadius: 6
+          }}
+        />
+        <div style={{ fontSize: 12, color: palette.text }}>Best of 3</div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            width: 34,
+            height: 20,
+            background: palette.bestOf5,
+            border: `1px solid ${palette.border}`,
+            borderRadius: 6
+          }}
+        />
+        <div style={{ fontSize: 12, color: palette.text }}>Best of 5</div>
+      </div>
+    </div>
   );
 }
 
@@ -249,7 +349,8 @@ export default function App() {
     const loadData = async () => {
       const { data: matchData, error: matchError } = await supabase
         .from("matches_with_names")
-        .select("id, match_no, bracket, source_top, source_bottom, player_top_name, player_bottom_name, sets_top, sets_bottom, x_pos, y_pos")
+        .select("id, match_no, bracket, source_top, source_bottom, player_top_name, player_bottom_name, sets_top, sets_bottom, x_pos, y_pos, best_of")
+        .eq("tournament_id", TOURNAMENT_ID)
         .order("match_no", { ascending: true });
 
       if (ignore) return;
@@ -326,7 +427,11 @@ export default function App() {
           <div style={{ transform: "translateX(-200px)" }}>Endrunde am xx.xx.2026</div>
         </div>
 
-        {error ? <div style={{ marginBottom: 12, padding: 12, background: "#fff3f3", color: "#8a1f1f", border: "1px solid #d9a0a0", borderRadius: 8 }}>Supabase-Fehler: {error}</div> : null}
+        {error ? (
+          <div style={{ marginBottom: 12, padding: 12, background: "#fff3f3", color: "#8a1f1f", border: "1px solid #d9a0a0", borderRadius: 8 }}>
+            Supabase-Fehler: {error}
+          </div>
+        ) : null}
 
         <div style={{ position: "relative", width: boardW - 40, height: 1080, overflow: "hidden", border: `1px solid ${palette.border}`, borderRadius: 12, background: "rgba(255,255,255,0.18)", boxSizing: "border-box" }}>
           <div style={abs(dividerLeftX, 0, { width: Math.max(0, dividerRightX - dividerLeftX), height: "100%", background: palette.middleBand })} />
@@ -348,6 +453,7 @@ export default function App() {
 
           <Meldeliste players={players} />
           {matches.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
+          <BestOfLegend />
         </div>
       </div>
     </div>
