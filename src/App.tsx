@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   "https://aoifhrkzdgnhnnbtjxri.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvaWZocmt6ZGduaG5uYnRqeHJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNzU3OTMsImV4cCI6MjA5MDY1MTc5M30.6U2kHdN_s88M6fmVqceNMpB0A30Wc0tM00vH6MqDC2w"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
 );
 
 type DbMatch = {
@@ -61,7 +61,7 @@ const palette = {
   page: "#2CA5FD",
   board: "#39ADFF",
   winner: "#dcedfb",
-  bestOf5: "#f6d7a8",
+  bestOf5: "#EF4461",
   border: "#8d6d1f",
   text: "#1f2a37",
   blue: "#3b74b6",
