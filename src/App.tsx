@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -440,6 +440,11 @@ export default function App() {
   const [players, setPlayers] = useState<DbPlayer[]>([]);
   const [tournament, setTournament] = useState<DbTournament | null>(null);
   const [error, setError] = useState("");
+  const [fitScale, setFitScale] = useState(1);
+  const [scaledHeight, setScaledHeight] = useState<number | null>(null);
+
+  const fitOuterRef = useRef<HTMLDivElement | null>(null);
+  const fitInnerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -502,6 +507,41 @@ export default function App() {
     };
   }, []);
 
+  useLayoutEffect(() => {
+    const updateScale = () => {
+      const outer = fitOuterRef.current;
+      const inner = fitInnerRef.current;
+      if (!outer || !inner) return;
+
+      const naturalWidth = inner.scrollWidth;
+      const naturalHeight = inner.scrollHeight;
+
+      if (!naturalWidth || !naturalHeight) return;
+
+      const mobilePadding = window.innerWidth <= 900 ? 8 : 24;
+      const availableWidth = Math.max(280, window.innerWidth - mobilePadding * 2);
+      const nextScale = Math.min(availableWidth / naturalWidth, 1);
+
+      setFitScale(nextScale);
+      setScaledHeight(Math.ceil(naturalHeight * nextScale));
+    };
+
+    updateScale();
+
+    const resizeObserver = new ResizeObserver(() => updateScale());
+    if (fitInnerRef.current) resizeObserver.observe(fitInnerRef.current);
+    if (fitOuterRef.current) resizeObserver.observe(fitOuterRef.current);
+
+    window.addEventListener("resize", updateScale);
+    window.addEventListener("orientationchange", updateScale);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateScale);
+      window.removeEventListener("orientationchange", updateScale);
+    };
+  }, [matches, players, tournament, error]);
+
   const rounds = useMemo(() => {
     const groups: Record<string, MatchData[]> = {};
     const classify = (matchNo: number) =>
@@ -534,100 +574,144 @@ export default function App() {
   }, [matches]);
 
   return (
-    <div style={{ minHeight: "100vh", width: "100%", overflow: "auto", padding: 24, background: palette.page }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        overflowX: "hidden",
+        overflowY: "auto",
+        padding: window.innerWidth <= 900 ? 8 : 24,
+        background: palette.page,
+        boxSizing: "border-box",
+      }}
+    >
       <div
         style={{
-          width: boardW,
-          margin: "0 auto",
-          background: palette.board,
-          borderRadius: 16,
-          padding: 20,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-          boxSizing: "border-box",
+          margin: "0 auto 8px auto",
+          maxWidth: boardW,
+          color: palette.text,
+          fontSize: 13,
+          textAlign: "center",
+          opacity: 0.8,
         }}
       >
-        <div style={{ marginBottom: 8, color: palette.text, fontSize: 34, fontWeight: 700, textAlign: "center" }}>
-          {tournament?.title || "3. Resi Tischtennisturnier 2026"}
-        </div>
+        Mobilansicht: automatisch eingepasst. Danach normal mit Browser-Zoom vergrößerbar.
+      </div>
 
+      <div
+        ref={fitOuterRef}
+        style={{
+          width: "100%",
+          maxWidth: boardW,
+          margin: "0 auto",
+          height: scaledHeight ?? "auto",
+          position: "relative",
+          overflow: "visible",
+        }}
+      >
         <div
+          ref={fitInnerRef}
           style={{
-            marginBottom: 16,
-            color: palette.text,
-            fontSize: 16,
-            fontWeight: 600,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            width: boardW,
+            transform: `scale(${fitScale})`,
+            transformOrigin: "top left",
           }}
         >
-          <div style={{ transform: "translateX(150px)" }}>
-            {tournament?.finals_text || "Endrunde am xx.xx.2026"}
-          </div>
-          <div>
-            {tournament?.play_until_text || 'Zu spielen bis "xx.xx.2026"'}
-          </div>
-          <div style={{ transform: "translateX(-200px)" }}>
-            {tournament?.finals_text || "Endrunde am xx.xx.2026"}
-          </div>
-        </div>
-
-        {error ? (
           <div
             style={{
-              marginBottom: 12,
-              padding: 12,
-              background: "#fff3f3",
-              color: "#8a1f1f",
-              border: "1px solid #d9a0a0",
-              borderRadius: 8,
+              width: boardW,
+              margin: "0 auto",
+              background: palette.board,
+              borderRadius: 16,
+              padding: 20,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+              boxSizing: "border-box",
             }}
           >
-            Supabase-Fehler: {error}
+            <div style={{ marginBottom: 8, color: palette.text, fontSize: 34, fontWeight: 700, textAlign: "center" }}>
+              {tournament?.title || "3. Resi Tischtennisturnier 2026"}
+            </div>
+
+            <div
+              style={{
+                marginBottom: 16,
+                color: palette.text,
+                fontSize: 16,
+                fontWeight: 600,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ transform: "translateX(150px)" }}>
+                {tournament?.finals_text || "Endrunde am xx.xx.2026"}
+              </div>
+              <div>
+                {tournament?.play_until_text || 'Zu spielen bis "xx.xx.2026"'}
+              </div>
+              <div style={{ transform: "translateX(-200px)" }}>
+                {tournament?.finals_text || "Endrunde am xx.xx.2026"}
+              </div>
+            </div>
+
+            {error ? (
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: 12,
+                  background: "#fff3f3",
+                  color: "#8a1f1f",
+                  border: "1px solid #d9a0a0",
+                  borderRadius: 8,
+                }}
+              >
+                Supabase-Fehler: {error}
+              </div>
+            ) : null}
+
+            <div
+              style={{
+                position: "relative",
+                width: boardW - 40,
+                height: 1080,
+                overflow: "hidden",
+                border: `1px solid ${palette.border}`,
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.18)",
+                boxSizing: "border-box",
+              }}
+            >
+              <div
+                style={abs(dividerLeftX, 0, {
+                  width: Math.max(0, dividerRightX - dividerLeftX),
+                  height: "100%",
+                  background: palette.middleBand,
+                })}
+              />
+              <ConnectorLayer rounds={rounds} />
+
+              <div style={abs(938, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R1</div>
+              <div style={abs(1028, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R2</div>
+              <div style={abs(1123, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R3</div>
+              <div style={abs(1208, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R4</div>
+              <div style={abs(1293, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R5</div>
+              <div style={abs(1378, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>Finale</div>
+              <div style={abs(683, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L1</div>
+              <div style={abs(593, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L2</div>
+              <div style={abs(503, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L3</div>
+              <div style={abs(416, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L4</div>
+              <div style={abs(329, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L5</div>
+              <div style={abs(242, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L6</div>
+              <div style={abs(155, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L7</div>
+              <div style={abs(68, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L8</div>
+
+              <Meldeliste players={players} />
+              {matches.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
+              <NewsPanel text={tournament?.homepage_news ?? ""} visible={tournament?.show_homepage_news ?? false} />
+              <TrophyPanel />
+              <BestOfLegend />
+            </div>
           </div>
-        ) : null}
-
-        <div
-          style={{
-            position: "relative",
-            width: boardW - 40,
-            height: 1080,
-            overflow: "hidden",
-            border: `1px solid ${palette.border}`,
-            borderRadius: 12,
-            background: "rgba(255,255,255,0.18)",
-            boxSizing: "border-box",
-          }}
-        >
-          <div
-            style={abs(dividerLeftX, 0, {
-              width: Math.max(0, dividerRightX - dividerLeftX),
-              height: "100%",
-              background: palette.middleBand,
-            })}
-          />
-          <ConnectorLayer rounds={rounds} />
-
-          <div style={abs(938, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R1</div>
-          <div style={abs(1028, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R2</div>
-          <div style={abs(1123, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R3</div>
-          <div style={abs(1208, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R4</div>
-          <div style={abs(1293, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>R5</div>
-          <div style={abs(1378, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>Finale</div>
-          <div style={abs(683, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L1</div>
-          <div style={abs(593, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L2</div>
-          <div style={abs(503, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L3</div>
-          <div style={abs(416, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L4</div>
-          <div style={abs(329, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L5</div>
-          <div style={abs(242, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L6</div>
-          <div style={abs(155, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L7</div>
-          <div style={abs(68, 64, { color: palette.blue, fontSize: 16, fontWeight: 700 })}>L8</div>
-
-          <Meldeliste players={players} />
-          {matches.map((match) => <MatchBox key={match.id} match={match} template={effectiveTemplate} />)}
-          <NewsPanel text={tournament?.homepage_news ?? ""} visible={tournament?.show_homepage_news ?? false} />
-          <TrophyPanel />
-          <BestOfLegend />
         </div>
       </div>
     </div>
