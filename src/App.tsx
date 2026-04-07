@@ -58,14 +58,14 @@ type MatchData = {
 };
 
 const palette = {
-  page: "#e4cd6f",
-  board: "#efe8c7",
+  page: "#2CA5FD",
+  board: "#39ADFF",
   winner: "#dcedfb",
   bestOf5: "#f6d7a8",
   border: "#8d6d1f",
   text: "#1f2a37",
   blue: "#3b74b6",
-  middleBand: "rgba(0,0,0,0.06)",
+  middleBand: "#1EA3FF",
   line: "#7b6320",
 };
 
@@ -301,7 +301,7 @@ function BestOfLegend() {
       style={abs(1455, 905, {
         width: 175,
         padding: 12,
-        background: "rgba(255,255,255,0.55)",
+        background: "rgba(57, 173, 255, 0.55)",
         border: `1px solid ${palette.border}`,
         borderRadius: 12,
         boxSizing: "border-box",
@@ -345,7 +345,7 @@ function NewsPanel({ text, visible }: { text: string; visible: boolean }) {
         width: 185,
         minHeight: 160,
         padding: 12,
-        background: "rgba(255,255,255,0.55)",
+        background: "rgba(57, 173, 255, 0.55)",
         border: `1px solid ${palette.border}`,
         borderRadius: 12,
         boxSizing: "border-box",
@@ -580,7 +580,7 @@ export default function App() {
         width: "100%",
         overflowX: "hidden",
         overflowY: "auto",
-        padding: window.innerWidth <= 900 ? 8 : 24,
+        padding: typeof window !== "undefined" && window.innerWidth <= 900 ? 8 : 24,
         background: palette.page,
         boxSizing: "border-box",
       }}
@@ -677,7 +677,7 @@ export default function App() {
                 overflow: "hidden",
                 border: `1px solid ${palette.border}`,
                 borderRadius: 12,
-                background: "rgba(255,255,255,0.18)",
+                background: "rgba(57, 173, 255, 0.18)",
                 boxSizing: "border-box",
               }}
             >
