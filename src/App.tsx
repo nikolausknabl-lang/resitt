@@ -58,7 +58,7 @@ type MatchData = {
 };
 
 const palette = {
-  page: "#2CA5FD",
+  page: "#39ADFF",
   board: "#39ADFF",
   winner: "#dcedfb",
   bestOf5: `radial-gradient(circle at 38% 62%,
@@ -522,7 +522,7 @@ export default function App() {
 
       if (!naturalWidth || !naturalHeight) return;
 
-      const mobilePadding = window.innerWidth <= 900 ? 8 : 24;
+      const mobilePadding = window.innerWidth <= 900 ? 0 : 0;
       const availableWidth = Math.max(280, window.innerWidth - mobilePadding * 2);
       const nextScale = Math.min(availableWidth / naturalWidth, 1);
 
@@ -584,24 +584,11 @@ export default function App() {
         width: "100%",
         overflowX: "hidden",
         overflowY: "auto",
-        padding: typeof window !== "undefined" && window.innerWidth <= 900 ? 8 : 24,
+        padding: 0,
         background: palette.page,
         boxSizing: "border-box",
       }}
     >
-      <div
-        style={{
-          margin: "0 auto 8px auto",
-          maxWidth: boardW,
-          color: palette.text,
-          fontSize: 13,
-          textAlign: "center",
-          opacity: 0.8,
-        }}
-      >
-        Mobilansicht: automatisch eingepasst. Danach normal mit Browser-Zoom vergrößerbar.
-      </div>
-
       <div
         ref={fitOuterRef}
         style={{
@@ -626,9 +613,9 @@ export default function App() {
               width: boardW,
               margin: "0 auto",
               background: palette.board,
-              borderRadius: 16,
+              borderRadius: 0,
               padding: 20,
-              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+              boxShadow: "none",
               boxSizing: "border-box",
             }}
           >
